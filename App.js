@@ -10,7 +10,8 @@ export class App extends React.Component {
 
     this.state = {
       lists: [],
-      uid: ""
+      loggedInText: '',
+      uid: ''
     }
 
     let firebaseConfig = {
@@ -31,25 +32,23 @@ export class App extends React.Component {
     }
   }
   componentDidMount() {
-  this.referenceShoppinglist = firebase.firestore().collection('list')
+    this.referenceShoppinglist = firebase.firestore().collection('list')
 
-  console.log(this.referenceShoppinglist.doc)
-
-  this.authUnsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
-    if (!user) {
-      await firebase.auth().signInAnonymously();
-    }
-  //update user state with currently active user data
-    this.setState({
-      uid: user.uid,
-      loggedInText: 'You are logged in'
-    });
-  })
-
-console.log(this.referenceShoppinglist.where("uid", "==", this.state.uid).get())
-
-this.referenceShoppinglistUser = this.referenceShoppinglist.where("uid", "==", this.state.uid);
-this.unsubscribeUser = this.referenceShoppinglistUser.onSnapshot(this.onCollectionUpdate);
+    this.authUnsubscribe = firebase.auth().onAuthStateChanged(async (user) => {
+      if (!user) {
+        await firebase.auth().signInAnonymously();
+      }
+    //update user state with currently active user data
+      this.setState({
+        uid: user.uid,
+        loggedInText: 'You are logged in'
+      });
+    
+    
+    
+      this.referenceShoppinglistUser = this.referenceShoppinglist.where("uid", "==", this.state.uid);
+      this.unsubscribeUser = this.referenceShoppinglistUser.onSnapshot(this.onCollectionUpdate);
+    })
 }
   addList() {
     this.referenceShoppinglist.add({
@@ -68,10 +67,10 @@ this.unsubscribeUser = this.referenceShoppinglistUser.onSnapshot(this.onCollecti
       console.log(doc.data)
       // get the QueryDocumentSnapshot's data
       var data = doc.data();
-      // console.log(data);
       lists.push({
         name: data.name,
         items: data.items.toString(),
+        uid: data.uid
       });
     });
     this.setState({
@@ -80,7 +79,8 @@ this.unsubscribeUser = this.referenceShoppinglistUser.onSnapshot(this.onCollecti
   };
 
   componentWillUnmount() {
-    this.unsubscribeUser && this.unsubscribeUser()
+    this.authUnsubscribe()
+    this.unsubscribeUser()
   }  
   render () {
     return (
@@ -90,9 +90,9 @@ this.unsubscribeUser = this.referenceShoppinglistUser.onSnapshot(this.onCollecti
       <FlatList
   data={this.state.lists}
   renderItem={({ item }) =>
-  <Text>{item.name}: {item.items}</Text>}
+  <Text>{item.name}: {item.items}: {item.uid}</Text>}
 />
-<Text>{this.state.loggedInText}</Text>
+<Text>{this.state.uid}</Text>
 <Button
       onPress={() => this.addList()}
       title="Add Something"
